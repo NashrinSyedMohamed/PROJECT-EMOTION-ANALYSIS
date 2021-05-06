@@ -273,6 +273,8 @@ descriptionclean.append(description[len(description)-3][9:(len(description[len(d
 descriptionclean.append(description[len(description)-2][9:(len(description[len(description)-2])-7)])
 descriptionclean.append(description[len(description)-1][9:(len(description[len(description)-1])-7)])
 
+holderimage = st.beta_columns(1)
+
 
 entity_pairs = []
 
@@ -309,10 +311,29 @@ edges = nx.get_edge_attributes(G, 'edge')
 edge_labels = {i[0:2]:'{}'.format(i[2]['edge']) for i in G.edges(data=True)}
 nx.draw_networkx_edge_labels(G, pos, edge_labels,label_pos=0.5, font_size=12)
 plt.savefig('langmodel22.png')
-st.write("Knowledge Graph")
-st.image("langmodel22.png")#, width=None)
+#st.write("Knowledge Graph")
+#st.image("langmodel22.png")#, width=None)
+#holderimage.header("Knowledge Graph")
 #holderimage.image('langmodel22.png')
 #shape=fig.get_size_inches()
 #plt.show()
+col1, col2 = st.beta_columns(2)
+col1.header("Original")
+col1.image("langmodel22.png", use_column_width=True)
+
+
+
+"""st.title("Let's create a table!")
+for i in range(1, 10):
+    cols = st.beta_columns(4)
+    cols[0].write(f'{i}')
+    cols[1].write(f'{i * i}')
+    cols[2].write(f'{i * i * i}')
+    cols[3].write('x' * i)"""
+
+
+
+
+
 
 
