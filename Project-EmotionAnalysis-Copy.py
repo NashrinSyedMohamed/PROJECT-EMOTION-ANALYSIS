@@ -1,4 +1,5 @@
 #Required Libraries
+from _typeshed import NoneType
 import streamlit as st
 import cv2
 import numpy as np
@@ -12,7 +13,8 @@ import sys
 import networkx as nx
 from collections import deque
 from random import randint
-
+#from Image_captioning import graph as ICgraph
+from Image_captioning import caption
 
 
 
@@ -23,10 +25,11 @@ from random import randint
 #Defining the Layout
 
 st.title('EMOTION-ANALYSIS')
-l1,l2 = st.beta_columns([2,2])
+l1,l2,l3 = st.beta_columns([2,2,3])
 option = l1.selectbox('Select the View',
                       ('Outdoor View', 'Indoor View', 'Sample Video'))
 stream = l1.button("STREAM NOW")
+
 
 #Capturing the Video stream
 
@@ -53,6 +56,7 @@ else:
 #    exit(0)
 my_placeholder1 = l1.empty()
 my_placeholder2 = l2.empty()
+my_placeholder3 = l3.empty()
 #------------------------------------------------------------------------------------------
 
 #Part -1 : Human Keypoints Detection
@@ -329,9 +333,18 @@ if stream:
         net.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA)
         net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA)
         print("Using GPU device")
+
+
+    ##Captioning class object
+    cap = caption.ImageCaptioning(model='Image_captioning//New_Model.h5',tokenizer='Image_captioning//New_Tok.pkl')
+    caption_textList = 'Ligne1\nLigne2\nLigne3\nLigne4\nLigne5\nLigne6\nLigne7\nLigne8\nLigne9\nLigne10'
+    st.text_area("Description model", value=caption_textList, height=275, max_chars=0, key=10)
+
     while True:
         ret,frame=cam.read()
         image1=frame
+        if(type(frame) == NoneType):
+            continue
         frameWidth = image1.shape[1]
         frameHeight = image1.shape[0]
         t = time.time()
@@ -348,6 +361,11 @@ if stream:
         keypoint_id = 0
         threshold = 0.1
         
+        ##Captioning
+        new_caption = cap.run(frame)
+        print(new_caption)
+        caption_textList = new_caption
+
         for part in range(nPoints):
             probMap = output[0,part,:,:]
             probMap = cv2.resize(probMap, (image1.shape[1], image1.shape[0]))
@@ -396,6 +414,8 @@ if stream:
             #Action Recognition
             action,action_per = action_recognition(ret,frame)#To store action analysis result
             my_placeholder2.write(action)
+            my_placeholder3.text_area("Model Description", value= new_caption, height=10, max_chars=0, key=10)
+            #my_placeholder3.write(new_caption)
             #KnowledgeGraph
             KG_DATA(result,action,action_per,count)
             count=count+1
