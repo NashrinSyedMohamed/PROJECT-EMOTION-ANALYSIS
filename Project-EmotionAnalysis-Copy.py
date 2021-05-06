@@ -1,4 +1,5 @@
 #Required Libraries
+from _typeshed import NoneType
 import streamlit as st
 import cv2
 import numpy as np
@@ -342,6 +343,8 @@ if stream:
     while True:
         ret,frame=cam.read()
         image1=frame
+        if(type(frame) == NoneType):
+            continue
         frameWidth = image1.shape[1]
         frameHeight = image1.shape[0]
         t = time.time()
