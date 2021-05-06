@@ -321,20 +321,20 @@ count=1
 device="gpu"
 if stream:
 
+    net = cv2.dnn.readNetFromCaffe(protoFile, weightsFile)
+    if device == "cpu":
+        net.setPreferableBackend(cv2.dnn.DNN_TARGET_CPU)
+        print("Using CPU device")
+    elif device == "gpu":
+        net.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA)
+        net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA)
+        print("Using GPU device")
     while True:
         ret,frame=cam.read()
         image1=frame
         frameWidth = image1.shape[1]
         frameHeight = image1.shape[0]
         t = time.time()
-        net = cv2.dnn.readNetFromCaffe(protoFile, weightsFile)
-        if device == "cpu":
-            net.setPreferableBackend(cv2.dnn.DNN_TARGET_CPU)
-            print("Using CPU device")
-        elif device == "gpu":
-            net.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA)
-            net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA)
-            print("Using GPU device")
         # Fix the input Height and get the width according to the Aspect Ratio
         inHeight = 368
         inWidth = int((inHeight/frameHeight)*frameWidth)
