@@ -16,6 +16,29 @@ from random import randint
 #from Image_captioning import graph as ICgraph
 from Image_captioning import caption
 
+# Librairy to draw the graph
+import re
+import pandas as pd
+import bs4
+import requests
+import spacy
+from spacy import displacy
+nlp = spacy.load('en_core_web_sm')
+
+from spacy.matcher import Matcher 
+from spacy.tokens import Span 
+
+import networkx as nx
+
+import matplotlib.pyplot as plt
+from tqdm import tqdm
+
+pd.set_option('display.max_colwidth', 200)
+#%matplotlib inline
+
+import get_relation
+import get_entities
+
 
 
 #-------------------------------------------------------------------------------------------
@@ -280,38 +303,43 @@ def action_recognition(ret,frame):
 
 #Part -4 : Knowledge Graph
 
-def KG_DATA(result,action,action_per,count):
-    #Initializing the Node Values
-    age = result['age']
-    gender = result['gender']
-    race = result['dominant_race']
-    race_per= round(result['race'][race],2)
-    emotion = result['dominant_emotion']
-    emotion_per = round(result['emotion'][emotion],2)
-    action_per = round(action_per,2)
+def KG_DATA(descriptionclean):
+    entity_pairs = []
+
+    for i in range(len(descriptionclean)):
+        entity_pairs.append(get_entities.get_entities(descriptionclean[i]))
+
+
+    relations = [get_relation.get_relation(descriptionclean[i]) for i in range(len(descriptionclean))]
+
+# extract subject
+    source = [i[0] for i in entity_pairs]
+     
+# extract object
+    target = [i[1] for i in entity_pairs]
+     
+#table of relation in the sentences
+    kg_df = pd.DataFrame({'source':source, 'target':target, 'edge':relations})
+    print(kg_df)
+
     
-    #Constructing the Knowledge Graph
-    head = "HUMAN"
-    kg = nx.OrderedGraph()
-    kg.add_node(head, size = 5000)
-    kg.add_edge(age,head)
-    kg.add_edge(gender,head)
-    kg.add_edge(race,head)
-    kg.add_edge(race_per,race)
-    kg.add_edge(emotion,head)
-    kg.add_edge(emotion_per,emotion)
-    kg.add_edge(head,action)
-    kg.add_edge(action_per,action)
-    pos = nx.kamada_kawai_layout(kg)
-    fig = plt.figure(figsize=(6,5))
-    nx.draw(kg, pos=pos,font_size=10,with_labels=True, node_size=800, node_color="aqua", width=2)
-    nx.draw_networkx_edge_labels(kg,pos,edge_labels={(age,head):'Age',(gender,head):'Gender',(race,head):'Race',
-                                                     (race_per,race):'Probability',(emotion,head):'Emotion',
-                                                     (emotion_per,emotion):'Probability',
-                                                     (head,action):'Action',(action_per,action):'Probability'},
-                                 label_pos=0.5, font_size=8, font_color='red', font_family='sans-serif', font_weight='normal')
-    plt.savefig('graph.png')
-    my_placeholder2.image('graph.png')
+    #Ploting of the graph
+    #fig = plt.figure(figsize=(12,12))
+    plt.figure(figsize=(12,12))
+
+    # create a directed-graph from a dataframe
+    G = nx.from_pandas_edgelist(kg_df, "source", "target", 
+                              edge_attr=True, create_using=nx.MultiDiGraph())
+
+    pos = nx.spring_layout(G)
+    nx.draw(G, pos, edge_color='black', width=1, linewidths=3,
+            node_size=300, node_color='skyblue', alpha=1,node_shape="s",
+            labels={node: node for node in G.nodes()})
+    edges = nx.get_edge_attributes(G, 'edge')
+    edge_labels = {i[0:2]:'{}'.format(i[2]['edge']) for i in G.edges(data=True)}
+    nx.draw_networkx_edge_labels(G, pos, edge_labels,label_pos=0.5, font_size=12)
+    plt.savefig('langmodel22.png')
+    my_placeholder2.image('langmodel22.png')
     shape = fig.get_size_inches()
     #my_placeholder2.write(shape)
     #my_placeholder2.pyplot(fig, figsize = (50,50))
@@ -321,6 +349,7 @@ def KG_DATA(result,action,action_per,count):
 
 #Main Program
 
+description=[]
 count=1
 device="gpu"
 if stream:
@@ -362,9 +391,25 @@ if stream:
         threshold = 0.1
         
         ##Captioning
+        descriptionclean=[]
         new_caption = cap.run(frame)
         print(new_caption)
         caption_textList = new_caption
+        description.append(new_caption)
+        for i in range(len(description)):
+            descriptionclean.append(description[len(description)-i][9:(len(description[len(description)-i])-7)])
+            if len(description)>10:
+                descriptionclean.append(description[len(description)-10][9:(len(description[len(description)-10])-7)])
+                descriptionclean.append(description[len(description)-9][9:(len(description[len(description)-9])-7)])
+                descriptionclean.append(description[len(description)-8][9:(len(description[len(description)-8])-7)])
+                descriptionclean.append(description[len(description)-7][9:(len(description[len(description)-7])-7)])
+                descriptionclean.append(description[len(description)-6][9:(len(description[len(description)-6])-7)])
+                descriptionclean.append(description[len(description)-5][9:(len(description[len(description)-5])-7)])
+                descriptionclean.append(description[len(description)-4][9:(len(description[len(description)-4])-7)])
+                descriptionclean.append(description[len(description)-3][9:(len(description[len(description)-3])-7)])
+                descriptionclean.append(description[len(description)-2][9:(len(description[len(description)-2])-7)])
+                descriptionclean.append(description[len(description)-1][9:(len(description[len(description)-1])-7)])
+            
 
         for part in range(nPoints):
             probMap = output[0,part,:,:]
@@ -417,10 +462,10 @@ if stream:
             #my_placeholder3.text_area("Model Description", value= new_caption, height=10, max_chars=100, key=10)
             my_placeholder3.write(new_caption)
             #KnowledgeGraph
-            KG_DATA(result,action,action_per,count)
+            KG_DATA(descriptionclean)
             count=count+1
         except Exception as e:
-            my_placeholder2.write("Faces are not clear")
+            my_placeholder2.write("Need more description")
             #my_placeholder2.write(e)
        
         if cv2.waitKey(10) & 0xFF == ord('q'):
