@@ -414,7 +414,8 @@ if stream:
             #Action Recognition
             action,action_per = action_recognition(ret,frame)#To store action analysis result
             my_placeholder2.write(action)
-            my_placeholder3.write(new_caption)
+            my_placeholder3.text_area("Model Description", value= new_caption, height=10, max_chars=0, key=10)
+            #my_placeholder3.write(new_caption)
             #KnowledgeGraph
             KG_DATA(result,action,action_per,count)
             count=count+1
