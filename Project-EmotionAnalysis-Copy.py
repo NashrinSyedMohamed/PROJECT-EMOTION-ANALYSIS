@@ -386,7 +386,7 @@ def KG_DATA2(descriptionclean):
     nx.draw_networkx_edge_labels(G, pos, edge_labels,label_pos=0.5, font_size=12)
     plt.savefig('langmodel22.png')
     my_placeholder4.image('langmodel22.png')
-    shape = fig.get_size_inches()
+    #shape = fig.get_size_inches()
     #my_placeholder2.write(shape)
     #my_placeholder2.pyplot(fig, figsize = (50,50))
     
@@ -396,6 +396,8 @@ def KG_DATA2(descriptionclean):
 #Main Program
 
 description=[]
+for i in range(10):
+    description.append("startseq  endseq")
 count=1
 device="gpu"
 if stream:
@@ -413,13 +415,14 @@ if stream:
     ##Captioning class object
     cap = caption.ImageCaptioning(model='Image_captioning//New_Model.h5',tokenizer='Image_captioning//New_Tok.pkl')
     caption_textList = 'Ligne1\nLigne2\nLigne3\nLigne4\nLigne5\nLigne6\nLigne7\nLigne8\nLigne9\nLigne10'
-    st.text_area("Description model", value=caption_textList, height=275, max_chars=0, key=10)
-
+    #st.text_area("Description model", value=caption_textList, height=275, max_chars=0, key=10)
+    
+    
     while True:
         ret,frame=cam.read()
         image1=frame
-        #if(type(frame) == NoneType):
-        #continue
+        if not (ret):
+            continue
         frameWidth = image1.shape[1]
         frameHeight = image1.shape[0]
         t = time.time()
@@ -435,16 +438,17 @@ if stream:
         keypoints_list = np.zeros((0,3))
         keypoint_id = 0
         threshold = 0.1
-        
         ##Captioning
-        descriptionclean=[]
         new_caption = cap.run(frame)
         print(new_caption)
         caption_textList = new_caption
+        descriptionclean=[]
+        descriptionclean.append("hello")
         description.append(new_caption)
         for i in range(len(description)):
-            descriptionclean.append(description[len(description)-i][9:(len(description[len(description)-i])-7)])
-            if len(description)>10:
+            if len(description)<10:
+                descriptionclean.append(description[len(description)-i][9:(len(description[len(description)-i])-7)])
+            elif len(description)>=10:
                 descriptionclean.append(description[len(description)-10][9:(len(description[len(description)-10])-7)])
                 descriptionclean.append(description[len(description)-9][9:(len(description[len(description)-9])-7)])
                 descriptionclean.append(description[len(description)-8][9:(len(description[len(description)-8])-7)])
