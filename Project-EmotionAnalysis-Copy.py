@@ -48,7 +48,7 @@ import get_entities
 #Defining the Layout
 
 st.title('EMOTION-ANALYSIS')
-l1,l2,l3 = st.beta_columns([2,2,3])
+l1,l2,l3,l4 = st.beta_columns([2,2,3,2])
 option = l1.selectbox('Select the View',
                       ('Outdoor View', 'Indoor View', 'Sample Video'))
 stream = l1.button("STREAM NOW")
@@ -80,6 +80,7 @@ else:
 my_placeholder1 = l1.empty()
 my_placeholder2 = l2.empty()
 my_placeholder3 = l3.empty()
+my_placeholder4 = l4.empty()
 #------------------------------------------------------------------------------------------
 
 #Part -1 : Human Keypoints Detection
@@ -299,11 +300,56 @@ def action_recognition(ret,frame):
         #l2.write(action)
         return action,action_per
 
+
+
+
+
 #-----------------------------------------------------------------------------------------------------------------------------#
 
 #Part -4 : Knowledge Graph
 
-def KG_DATA(descriptionclean):
+def KG_DATA(result,action,action_per,count):
+    #Initializing the Node Values
+    age = result['age']
+    gender = result['gender']
+    race = result['dominant_race']
+    race_per= round(result['race'][race],2)
+    emotion = result['dominant_emotion']
+    emotion_per = round(result['emotion'][emotion],2)
+    action_per = round(action_per,2)
+    
+    #Constructing the Knowledge Graph
+    head = "HUMAN"
+    kg = nx.OrderedGraph()
+    kg.add_node(head, size = 5000)
+    kg.add_edge(age,head)
+    kg.add_edge(gender,head)
+    kg.add_edge(race,head)
+    kg.add_edge(race_per,race)
+    kg.add_edge(emotion,head)
+    kg.add_edge(emotion_per,emotion)
+    kg.add_edge(head,action)
+    kg.add_edge(action_per,action)
+    pos = nx.kamada_kawai_layout(kg)
+    fig = plt.figure(figsize=(6,5))
+    nx.draw(kg, pos=pos,font_size=10,with_labels=True, node_size=800, node_color="aqua", width=2)
+    nx.draw_networkx_edge_labels(kg,pos,edge_labels={(age,head):'Age',(gender,head):'Gender',(race,head):'Race',
+                                                     (race_per,race):'Probability',(emotion,head):'Emotion',
+                                                     (emotion_per,emotion):'Probability',
+                                                     (head,action):'Action',(action_per,action):'Probability'},
+                                 label_pos=0.5, font_size=8, font_color='red', font_family='sans-serif', font_weight='normal')
+    plt.savefig('graph.png')
+    my_placeholder2.image('graph.png')
+    shape = fig.get_size_inches()
+    #my_placeholder2.write(shape)
+    #my_placeholder2.pyplot(fig, figsize = (50,50))
+    
+    cv2.destroyAllWindows()
+#-----------------------------------------------------------------------------------------------------------------------------#
+
+#Part -5 : Knowledge Graph Caption
+
+def KG_DATA2(descriptionclean):
     entity_pairs = []
 
     for i in range(len(descriptionclean)):
@@ -339,7 +385,7 @@ def KG_DATA(descriptionclean):
     edge_labels = {i[0:2]:'{}'.format(i[2]['edge']) for i in G.edges(data=True)}
     nx.draw_networkx_edge_labels(G, pos, edge_labels,label_pos=0.5, font_size=12)
     plt.savefig('langmodel22.png')
-    my_placeholder2.image('langmodel22.png')
+    my_placeholder4.image('langmodel22.png')
     shape = fig.get_size_inches()
     #my_placeholder2.write(shape)
     #my_placeholder2.pyplot(fig, figsize = (50,50))
@@ -459,14 +505,19 @@ if stream:
             #Action Recognition
             action,action_per = action_recognition(ret,frame)#To store action analysis result
             my_placeholder2.write(action)
-            #my_placeholder3.text_area("Model Description", value= new_caption, height=10, max_chars=100, key=10)
-            my_placeholder3.write(new_caption)
             #KnowledgeGraph
-            KG_DATA(descriptionclean)
+            KG_DATA(result,action,action_per,count)
             count=count+1
         except Exception as e:
-            my_placeholder2.write("Need more description")
+            my_placeholder2.write("Faces are not clear")
             #my_placeholder2.write(e)
+
+        try:
+            #KnowledgeGraph caption
+            KG_DATA2(descriptionclean)
+            count=count+1
+        except Exception as e:
+            my_placeholder4.write("Need more description")
        
         if cv2.waitKey(10) & 0xFF == ord('q'):
             break
